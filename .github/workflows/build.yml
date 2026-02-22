@@ -1,10 +1,9 @@
-name: Build GTA III Plugin
+name: Build Sky-UI (Mid Opt)
 on: [push, workflow_dispatch]
 
 jobs:
   build:
     runs-on: windows-2022
-    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -25,28 +24,20 @@ jobs:
         with:
           version: "5.0.0-beta4"
 
-      - name: Build SDK
+      - name: Build Everything
         env:
           PLUGIN_SDK_DIR: ${{ github.workspace }}\plugin-sdk
         run: |
           cd plugin-sdk\tools\premake
           premake5 vs2022
           cd ..\..
-          msbuild "Plugin_III\Plugin_III.vcxproj" /p:Configuration=Release /p:Platform=Win32 /v:m
-        shell: cmd
-
-      - name: Build Sky-UI
-        env:
-          PLUGIN_SDK_DIR: ${{ github.workspace }}\plugin-sdk
-        run: |
+          msbuild "Plugin_III\Plugin_III.vcxproj" /p:Configuration=Release /p:Platform=Win32 /p:WholeProgramOptimization=true /v:m
           premake5 vs2022
-          # Skip the local copy step that causes the crash
-          msbuild "project_files\sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32 /p:PostBuildEventUseInBuild=false /v:m
+          msbuild "project_files\sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32 /p:PostBuildEventUseInBuild=false /p:WholeProgramOptimization=true /p:LinkIncremental=false /p:Optimize=true /v:m
         shell: cmd
 
       - name: Upload ASI
         uses: actions/upload-artifact@v4
         with:
-          name: SkyUI-ASI
-          path: |
-             output/asi/*.asi
+          name: SkyUI-Mid-Opt
+          path: output/asi/*.asi
