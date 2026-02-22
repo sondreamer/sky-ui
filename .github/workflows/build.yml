@@ -30,16 +30,17 @@ jobs:
           PLUGIN_SDK_DIR: ${{ github.workspace }}\plugin-sdk
         run: |
           @echo off
-          :: 1. Build SDK with Dynamic Runtime
+          :: 1. Build SDK with Dynamic Runtime (/MD)
           cd plugin-sdk\tools\premake
           premake5 vs2022
           cd ..\..
           msbuild "Plugin_III\Plugin_III.vcxproj" /p:Configuration=Release /p:Platform=Win32 /p:RuntimeLibrary=MultiThreadedDLL /p:WholeProgramOptimization=true /v:m
           
-          :: 2. Build Sky-UI with Dynamic Runtime
+          :: 2. Build Sky-UI with Dynamic Runtime (/MD)
           cd ..
           premake5 vs2022
-          msbuild "sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32 /p:PostBuildEventUseInBuild=false /p:RuntimeLibrary=MultiThreadedDLL /p:WholeProgramOptimization=true /p:Optimize=true /p:DebugInformationFormat=None /p:LinkIncremental=false /v:m
+          :: Pointing to the subfolder Premake just created
+          msbuild "project_files\sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32 /p:PostBuildEventUseInBuild=false /p:RuntimeLibrary=MultiThreadedDLL /p:WholeProgramOptimization=true /p:Optimize=true /p:DebugInformationFormat=None /p:LinkIncremental=false /v:m
         shell: cmd
 
       - name: Upload ASI
