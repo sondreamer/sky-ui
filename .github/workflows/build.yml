@@ -4,7 +4,7 @@ on: [push, workflow_dispatch]
 jobs:
   build:
     runs-on: windows-2022
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,7 +32,7 @@ jobs:
           cd plugin-sdk\tools\premake
           premake5 vs2022
           cd ..\..
-          msbuild "project_files\plugin_iii.vcxproj" /p:Configuration=Release /p:Platform=Win32 /v:m
+          msbuild "Plugin_III\Plugin_III.vcxproj" /p:Configuration=Release /p:Platform=Win32 /v:m
         shell: cmd
 
       - name: Build Sky-UI
