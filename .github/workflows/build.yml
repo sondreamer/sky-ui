@@ -10,6 +10,13 @@ jobs:
         with:
           submodules: recursive
 
+      # 1. Download the required Plugin-SDK
+      - name: Checkout Plugin-SDK
+        uses: actions/checkout@v4
+        with:
+          repository: DK22Pac/plugin-sdk
+          path: plugin-sdk
+
       - name: Run Premake
         run: ./premake5.bat
         shell: cmd
@@ -18,7 +25,9 @@ jobs:
         uses: microsoft/setup-msbuild@v2
 
       - name: Build Solution
-        # We removed /p:Platform=x86 to let it use the project's internal default
+        env:
+          # This tells the compiler where the SDK is located
+          PLUGIN_SDK_DIR: ${{ github.workspace }}\plugin-sdk
         run: msbuild "project_files/sky-ui.sln" /p:Configuration=ReleaseIII
 
       - name: Upload ASI
@@ -28,3 +37,4 @@ jobs:
           path: |
              bin/**/*.asi
              bin/**/*.dll
+             output/asi/*.asi
