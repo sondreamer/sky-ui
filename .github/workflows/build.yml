@@ -28,11 +28,16 @@ jobs:
         env:
           PLUGIN_SDK_DIR: ${{ github.workspace }}\plugin-sdk
         run: |
-          ren premake5.exe premake5_old.exe
+          @echo off
+          if exist premake5.exe del /f premake5.exe
+          echo Starting SDK Generation...
           premake5 --file=plugin-sdk/tools/premake/premake5.lua vs2022
-          msbuild "plugin-sdk\project_files\plugin_iii.vcxproj" /p:Configuration=Release /p:Platform=Win32
+          echo Building SDK Library...
+          msbuild "plugin-sdk\project_files\plugin_iii.vcxproj" /p:Configuration=Release /p:Platform=Win32 /v:m
+          echo Generating SkyUI Project...
           premake5 vs2022
-          msbuild "project_files\sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32
+          echo Building SkyUI ASI...
+          msbuild "project_files\sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32 /v:m
         shell: cmd
 
       - name: Upload ASI
