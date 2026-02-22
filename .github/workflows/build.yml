@@ -1,4 +1,4 @@
-name: Build Sky-UI (Break 418KB)
+name: Build Sky-UI (Force Shrink)
 on: [push, workflow_dispatch]
 
 jobs:
@@ -24,38 +24,31 @@ jobs:
         with:
           version: "5.0.0-beta4"
 
-      - name: Build Everything
+      - name: Build
         env:
           PLUGIN_SDK_DIR: ${{ github.workspace }}\plugin-sdk
         run: |
-          @echo off
-          :: 1. Build SDK with DYNAMIC runtime
           cd plugin-sdk\tools\premake
           premake5 vs2022
           cd ..\..
-          msbuild "Plugin_III\Plugin_III.vcxproj" /p:Configuration=Release /p:Platform=Win32 /p:RuntimeLibrary=MultiThreadedDLL /p:WholeProgramOptimization=true /v:m
-          
-          :: 2. Build Sky-UI with DYNAMIC runtime
+          msbuild "Plugin_III\Plugin_III.vcxproj" /p:Configuration=Release /p:Platform=Win32 /p:WholeProgramOptimization=true /v:m
           cd ..
           premake5 vs2022
-          msbuild "project_files\sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32 /p:PostBuildEventUseInBuild=false /p:RuntimeLibrary=MultiThreadedDLL /p:WholeProgramOptimization=true /p:Optimization=MinSpace /p:LinkIncremental=false /p:GenerateDebugInformation=false /v:m
+          msbuild "project_files\sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32 /p:PostBuildEventUseInBuild=false /p:WholeProgramOptimization=true /p:Optimization=MinSpace /p:LinkIncremental=false /v:m
         shell: cmd
 
-      - name: Force UPX Compression
+      - name: Search and Compress
         run: |
           choco install upx
-          :: Find the file and compress it directly
-          for /r %%i in (*.asi) do (
-            echo Compressing %%i
-            upx --best --ultra-brute --force "%%i"
+          :: Search every folder for the .asi and compress it
+          for /r %%f in (*.asi) do (
+            echo Found file at: %%f
+            upx --best --ultra-brute --force "%%f"
           )
         shell: cmd
 
-      - name: Upload ASI
+      - name: Upload Result
         uses: actions/upload-artifact@v4
         with:
-          name: SkyUI-Smallest
-          path: |
-            output/asi/*.asi
-            bin/*.asi
-            project_files/output/asi/*.asi
+          name: SkyUI-Final
+          path: "**/*.asi"
