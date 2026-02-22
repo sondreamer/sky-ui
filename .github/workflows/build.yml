@@ -1,4 +1,4 @@
-name: Build Sky-UI (Surgical Merge)
+name: Build Sky-UI (Hard Reset)
 on: [push, workflow_dispatch]
 
 jobs:
@@ -24,7 +24,7 @@ jobs:
         with:
           version: "5.0.0-beta4"
 
-      - name: Build Everything
+      - name: Build
         env:
           PLUGIN_SDK_DIR: ${{ github.workspace }}\plugin-sdk
         run: |
@@ -33,26 +33,28 @@ jobs:
           premake5 vs2022
           cd ..\..
           
-          :: Build SDK
-          msbuild "Plugin_III\Plugin_III.vcxproj" /p:Configuration=Release /p:Platform=Win32 /p:RuntimeLibrary=MultiThreadedDLL /p:WholeProgramOptimization=true /v:m
+          :: Build SDK with 'Minimize Size' forced
+          msbuild "Plugin_III\Plugin_III.vcxproj" /p:Configuration=Release /p:Platform=Win32 /p:WholeProgramOptimization=true /p:Optimization=MinSpace /v:m
           
           cd ..
           premake5 vs2022
 
-          :: SURGICAL LINKING: 
-          :: /MERGE:.rdata=.text  -> Put data inside the code section
-          :: /ALIGN:16            -> Force tiny file alignment
-          msbuild "project_files\sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32 /p:PostBuildEventUseInBuild=false /p:RuntimeLibrary=MultiThreadedDLL /p:WholeProgramOptimization=true /p:LinkTimeCodeGeneration=UseLinkTimeCodeGeneration /p:Optimization=MinSpace /p:AdditionalOptions="/MERGE:.rdata=.text /ALIGN:16" /v:m
+          :: THE SURGERY:
+          :: 1. Force Link Time Code Gen
+          :: 2. Remove all Padding (/OPT:REF,ICF)
+          :: 3. Merge sections to prevent alignment overhead
+          msbuild "project_files\sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32 /p:PostBuildEventUseInBuild=false /p:WholeProgramOptimization=true /p:Optimization=MinSpace /p:AdditionalOptions="/OPT:REF /OPT:ICF /MERGE:.rdata=.text /MERGE:.data=.text /SECTION:.text,EWR" /v:m
         shell: cmd
 
-      - name: Final UPX Push
+      - name: UPX Nuclear
         run: |
           choco install upx
-          for /r %%i in (*.asi) do upx --best --ultra-brute --force "%%i"
+          :: Force compression even if it thinks it's risky
+          for /r %%i in (*.asi) do upx --best --ultra-brute --force --overlay=strip "%%i"
         shell: cmd
 
-      - name: Upload Result
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: SkyUI-Surgical
+          name: SkyUI-Final-Attempt
           path: "**/*.asi"
