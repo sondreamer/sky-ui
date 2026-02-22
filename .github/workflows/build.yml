@@ -19,28 +19,28 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
-      # We use the 'shell: cmd' but call the 'setup-msbuild' environment
+      # 1. Build the Plugin-SDK .lib directly
       - name: Build Plugin-SDK Library
         run: |
-          cd plugin-sdk/tools/premake
-          premake5 vs2022
-          cd ../..
-          msbuild "project_files/plugin_iii.sln" /p:Configuration=Release /p:Platform=Win32
+          # Use the premake exe directly to avoid the 'Locate' error
+          ./plugin-sdk/tools/premake/premake5.exe --file=plugin-sdk/tools/premake/premake5.lua vs2022
+          # Build the GTA III library
+          msbuild "plugin-sdk/project_files/plugin_iii.sln" /p:Configuration=Release /p:Platform=Win32
         shell: cmd
 
-      - name: Run Sky-UI Premake
-        run: ./premake5.bat
-        shell: cmd
-
-      - name: Build Sky-UI Solution
+      # 2. Build your Sky-UI mod
+      - name: Build Sky-UI Mod
         env:
           PLUGIN_SDK_DIR: ${{ github.workspace }}\plugin-sdk
-        run: msbuild "project_files/sky-ui.sln" /p:Configuration=ReleaseIII
+        run: |
+          ./premake5.exe vs2022
+          msbuild "project_files/sky-ui.sln" /p:Configuration=ReleaseIII
+        shell: cmd
 
       - name: Upload ASI
         uses: actions/upload-artifact@v4
         with:
           name: SkyUI-ASI
           path: |
-             bin/**/*.asi
              output/asi/*.asi
+             bin/**/*.asi
