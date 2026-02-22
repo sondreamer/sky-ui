@@ -19,22 +19,18 @@ jobs:
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
-      # 1. Build the Plugin-SDK .lib directly
       - name: Build Plugin-SDK Library
         run: |
-          # Use the premake exe directly to avoid the 'Locate' error
-          ./plugin-sdk/tools/premake/premake5.exe --file=plugin-sdk/tools/premake/premake5.lua vs2022
-          # Build the GTA III library
-          msbuild "plugin-sdk/project_files/plugin_iii.sln" /p:Configuration=Release /p:Platform=Win32
+          .\premake5.exe --file=plugin-sdk/tools/premake/premake5.lua vs2022
+          msbuild "plugin-sdk\project_files\plugin_iii.sln" /p:Configuration=Release /p:Platform=Win32
         shell: cmd
 
-      # 2. Build your Sky-UI mod
       - name: Build Sky-UI Mod
         env:
           PLUGIN_SDK_DIR: ${{ github.workspace }}\plugin-sdk
         run: |
-          ./premake5.exe vs2022
-          msbuild "project_files/sky-ui.sln" /p:Configuration=ReleaseIII
+          .\premake5.exe vs2022
+          msbuild "project_files\sky-ui.sln" /p:Configuration=ReleaseIII
         shell: cmd
 
       - name: Upload ASI
