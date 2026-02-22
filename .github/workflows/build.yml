@@ -4,6 +4,7 @@ on: [push, workflow_dispatch]
 jobs:
   build:
     runs-on: windows-2022
+    timeout-minutes: 10
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -24,19 +25,21 @@ jobs:
         with:
           version: "5.0.0-beta4"
 
-      - name: Build Everything
+      - name: Build SDK
         env:
           PLUGIN_SDK_DIR: ${{ github.workspace }}\plugin-sdk
         run: |
-          @echo off
-          if exist premake5.exe del /f premake5.exe
-          echo Starting SDK Generation...
-          premake5 --file=plugin-sdk/tools/premake/premake5.lua vs2022
-          echo Building SDK Library...
-          msbuild "plugin-sdk\project_files\plugin_iii.vcxproj" /p:Configuration=Release /p:Platform=Win32 /v:m
-          echo Generating SkyUI Project...
+          cd plugin-sdk\tools\premake
           premake5 vs2022
-          echo Building SkyUI ASI...
+          cd ..\..
+          msbuild "project_files\plugin_iii.vcxproj" /p:Configuration=Release /p:Platform=Win32 /v:m
+        shell: cmd
+
+      - name: Build Sky-UI
+        env:
+          PLUGIN_SDK_DIR: ${{ github.workspace }}\plugin-sdk
+        run: |
+          premake5 vs2022
           msbuild "project_files\sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32 /v:m
         shell: cmd
 
