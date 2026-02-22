@@ -4,6 +4,7 @@ on: [push, workflow_dispatch]
 jobs:
   build:
     runs-on: windows-2022
+    timeout-minutes: 15
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -28,13 +29,17 @@ jobs:
         env:
           PLUGIN_SDK_DIR: ${{ github.workspace }}\plugin-sdk
         run: |
+          @echo off
+          :: 1. Build SDK with Dynamic Runtime
           cd plugin-sdk\tools\premake
           premake5 vs2022
           cd ..\..
-          # Force /MD (Dynamic Runtime) and Maximum Optimization
           msbuild "Plugin_III\Plugin_III.vcxproj" /p:Configuration=Release /p:Platform=Win32 /p:RuntimeLibrary=MultiThreadedDLL /p:WholeProgramOptimization=true /v:m
+          
+          :: 2. Build Sky-UI with Dynamic Runtime
+          cd ..
           premake5 vs2022
-          msbuild "project_files\sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32 /p:PostBuildEventUseInBuild=false /p:RuntimeLibrary=MultiThreadedDLL /p:WholeProgramOptimization=true /p:Optimize=true /p:DebugInformationFormat=None /p:LinkIncremental=false /v:m
+          msbuild "sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32 /p:PostBuildEventUseInBuild=false /p:RuntimeLibrary=MultiThreadedDLL /p:WholeProgramOptimization=true /p:Optimize=true /p:DebugInformationFormat=None /p:LinkIncremental=false /v:m
         shell: cmd
 
       - name: Upload ASI
