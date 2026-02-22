@@ -1,4 +1,4 @@
-name: Build Sky-UI (Ultra Small)
+name: Build Sky-UI (Ultra Compressed)
 on: [push, workflow_dispatch]
 
 jobs:
@@ -29,25 +29,30 @@ jobs:
           PLUGIN_SDK_DIR: ${{ github.workspace }}\plugin-sdk
         run: |
           @echo off
+          :: 1. Build SDK
           cd plugin-sdk\tools\premake
           premake5 vs2022
           cd ..\..
           msbuild "Plugin_III\Plugin_III.vcxproj" /p:Configuration=Release /p:Platform=Win32 /p:WholeProgramOptimization=true /v:m
           
+          :: 2. Build Sky-UI (Forcing NO debug info)
           cd ..
           premake5 vs2022
-          msbuild "project_files\sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32 /p:PostBuildEventUseInBuild=false /p:WholeProgramOptimization=true /p:Optimization=MinSpace /p:LinkIncremental=false /p:DebugInformationFormat=None /v:m
+          msbuild "project_files\sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32 /p:PostBuildEventUseInBuild=false /p:WholeProgramOptimization=true /p:Optimization=MinSpace /p:DebugInformationFormat=None /p:LinkIncremental=false /v:m
         shell: cmd
 
-      - name: Compress with UPX
+      - name: Force UPX Compression
         run: |
           choco install upx
-          :: Target the specific output folder and force compression
+          :: We search for the ASI everywhere to make sure we hit it
+          dir /s /b *.asi
           upx --best --ultra-brute --force output/asi/*.asi
         shell: cmd
 
       - name: Upload ASI
         uses: actions/upload-artifact@v4
         with:
-          name: SkyUI-Compressed
-          path: output/asi/*.asi
+          name: SkyUI-Smallest
+          path: |
+            output/asi/*.asi
+            bin/*.asi
