@@ -10,23 +10,29 @@ jobs:
         with:
           submodules: recursive
 
-      # 1. Download the required Plugin-SDK
       - name: Checkout Plugin-SDK
         uses: actions/checkout@v4
         with:
           repository: DK22Pac/plugin-sdk
           path: plugin-sdk
 
-      - name: Run Premake
+      # NEW STEP: We must build the SDK's library file first
+      - name: Build Plugin-SDK Library
+        run: |
+          cd plugin-sdk
+          .\premake5.bat vs2022
+          msbuild "project_files/plugin_iii.sln" /p:Configuration=Release /p:Platform=Win32
+        shell: cmd
+
+      - name: Run Sky-UI Premake
         run: ./premake5.bat
         shell: cmd
 
       - name: Setup MSBuild
         uses: microsoft/setup-msbuild@v2
 
-      - name: Build Solution
+      - name: Build Sky-UI Solution
         env:
-          # This tells the compiler where the SDK is located
           PLUGIN_SDK_DIR: ${{ github.workspace }}\plugin-sdk
         run: msbuild "project_files/sky-ui.sln" /p:Configuration=ReleaseIII
 
