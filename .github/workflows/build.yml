@@ -29,23 +29,21 @@ jobs:
           PLUGIN_SDK_DIR: ${{ github.workspace }}\plugin-sdk
         run: |
           @echo off
-          :: 1. Generate and Build SDK with forced High Opt
+          :: 1. Build SDK with Whole Program Optimization
           cd plugin-sdk\tools\premake
           premake5 vs2022
           cd ..\..
-          msbuild "Plugin_III\Plugin_III.vcxproj" /p:Configuration=Release /p:Platform=Win32 /p:RuntimeLibrary=MultiThreadedDLL /p:WholeProgramOptimization=true /p:Optimization=MinSpace /v:m
+          msbuild "Plugin_III\Plugin_III.vcxproj" /p:Configuration=Release /p:Platform=Win32 /p:WholeProgramOptimization=true /v:m
           
-          :: 2. Generate and Build Sky-UI
+          :: 2. Build Sky-UI with Max Size Optimization
           cd ..
           premake5 vs2022
-          
-          :: FORCE Small Size: Disable Debug Info and force Link Time Code Gen
-          msbuild "project_files\sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32 /p:PostBuildEventUseInBuild=false /p:RuntimeLibrary=MultiThreadedDLL /p:WholeProgramOptimization=true /p:LinkTimeCodeGeneration=UseLinkTimeCodeGeneration /p:Optimization=MinSpace /p:DebugInformationFormat=None /p:LinkIncremental=false /v:m
+          msbuild "project_files\sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32 /p:PostBuildEventUseInBuild=false /p:WholeProgramOptimization=true /p:Optimization=MinSpace /p:LinkIncremental=false /p:DebugInformationFormat=None /v:m
         shell: cmd
 
-      # This tool squeezes the final .asi like a .zip file
       - name: Compress with UPX
         run: |
+          :: Install UPX and compress the file
           choco install upx
           upx --best --ultra-brute output/asi/*.asi
         shell: cmd
@@ -53,5 +51,5 @@ jobs:
       - name: Upload ASI
         uses: actions/upload-artifact@v4
         with:
-          name: SkyUI-UltraSmall
+          name: SkyUI-Compressed
           path: output/asi/*.asi
