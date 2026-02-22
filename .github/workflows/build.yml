@@ -1,4 +1,4 @@
-name: Build Sky-UI (Ultra Compressed)
+name: Build Sky-UI (Break 418KB)
 on: [push, workflow_dispatch]
 
 jobs:
@@ -29,24 +29,26 @@ jobs:
           PLUGIN_SDK_DIR: ${{ github.workspace }}\plugin-sdk
         run: |
           @echo off
-          :: 1. Build SDK
+          :: 1. Build SDK with DYNAMIC runtime
           cd plugin-sdk\tools\premake
           premake5 vs2022
           cd ..\..
-          msbuild "Plugin_III\Plugin_III.vcxproj" /p:Configuration=Release /p:Platform=Win32 /p:WholeProgramOptimization=true /v:m
+          msbuild "Plugin_III\Plugin_III.vcxproj" /p:Configuration=Release /p:Platform=Win32 /p:RuntimeLibrary=MultiThreadedDLL /p:WholeProgramOptimization=true /v:m
           
-          :: 2. Build Sky-UI (Forcing NO debug info)
+          :: 2. Build Sky-UI with DYNAMIC runtime
           cd ..
           premake5 vs2022
-          msbuild "project_files\sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32 /p:PostBuildEventUseInBuild=false /p:WholeProgramOptimization=true /p:Optimization=MinSpace /p:DebugInformationFormat=None /p:LinkIncremental=false /v:m
+          msbuild "project_files\sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32 /p:PostBuildEventUseInBuild=false /p:RuntimeLibrary=MultiThreadedDLL /p:WholeProgramOptimization=true /p:Optimization=MinSpace /p:LinkIncremental=false /p:GenerateDebugInformation=false /v:m
         shell: cmd
 
       - name: Force UPX Compression
         run: |
           choco install upx
-          :: We search for the ASI everywhere to make sure we hit it
-          dir /s /b *.asi
-          upx --best --ultra-brute --force output/asi/*.asi
+          :: Find the file and compress it directly
+          for /r %%i in (*.asi) do (
+            echo Compressing %%i
+            upx --best --ultra-brute --force "%%i"
+          )
         shell: cmd
 
       - name: Upload ASI
@@ -56,3 +58,4 @@ jobs:
           path: |
             output/asi/*.asi
             bin/*.asi
+            project_files/output/asi/*.asi
