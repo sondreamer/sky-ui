@@ -1,4 +1,4 @@
-name: Build Sky-UI (Hard Reset)
+name: Build Sky-UI (Hard Floor Break)
 on: [push, workflow_dispatch]
 
 jobs:
@@ -33,28 +33,28 @@ jobs:
           premake5 vs2022
           cd ..\..
           
-          :: Build SDK with 'Minimize Size' forced
-          msbuild "Plugin_III\Plugin_III.vcxproj" /p:Configuration=Release /p:Platform=Win32 /p:WholeProgramOptimization=true /p:Optimization=MinSpace /v:m
+          :: Build SDK
+          msbuild "Plugin_III\Plugin_III.vcxproj" /p:Configuration=Release /p:Platform=Win32 /p:WholeProgramOptimization=true /v:m
           
           cd ..
           premake5 vs2022
 
-          :: THE SURGERY:
-          :: 1. Force Link Time Code Gen
-          :: 2. Remove all Padding (/OPT:REF,ICF)
-          :: 3. Merge sections to prevent alignment overhead
-          msbuild "project_files\sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32 /p:PostBuildEventUseInBuild=false /p:WholeProgramOptimization=true /p:Optimization=MinSpace /p:AdditionalOptions="/OPT:REF /OPT:ICF /MERGE:.rdata=.text /MERGE:.data=.text /SECTION:.text,EWR" /v:m
+          :: THE ABSOLUTE LIMIT:
+          :: 1. /ORDER: Forces the linker to arrange functions to minimize gaps.
+          :: 2. /STUB: Uses a tiny DOS stub.
+          :: 3. /OPT:REF,ICF: Deletes every single unused function/variable.
+          msbuild "project_files\sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32 /p:PostBuildEventUseInBuild=false /p:WholeProgramOptimization=true /p:Optimization=MinSpace /p:AdditionalOptions="/OPT:REF /OPT:ICF /ORDER:@linker_order.txt /STUB:NONE /MERGE:.rdata=.text /MERGE:.data=.text" /v:m
         shell: cmd
 
-      - name: UPX Nuclear
+      - name: UPX Search and Destroy
         run: |
           choco install upx
-          :: Force compression even if it thinks it's risky
-          for /r %%i in (*.asi) do upx --best --ultra-brute --force --overlay=strip "%%i"
+          :: This will fail if the file is truly uncompressible
+          for /r %%i in (*.asi) do upx --best --ultra-brute --force --all-methods --all-filters "%%i"
         shell: cmd
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: SkyUI-Final-Attempt
+          name: SkyUI-Limit
           path: "**/*.asi"
