@@ -18,15 +18,13 @@ jobs:
         uses: microsoft/setup-msbuild@v2
 
       - name: Build Solution
-        # Pointing to the specific folder Premake just created
-        # Changed Platform to Win32 (x86) for GTA III compatibility
-        run: msbuild "project_files/sky-ui.sln" /p:Configuration=Release /p:Platform=Win32
+        # Using 'ReleaseIII' because that's what the developer named the GTA 3 config
+        run: msbuild "project_files/sky-ui.sln" /p:Configuration=ReleaseIII /p:Platform=x86
 
       - name: Upload ASI
         uses: actions/upload-artifact@v4
         with:
           name: SkyUI-ASI
-          # This catches the file wherever it lands in the bin folder
           path: |
              bin/**/*.asi
              bin/**/*.dll
