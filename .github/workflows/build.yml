@@ -16,20 +16,21 @@ jobs:
           repository: DK22Pac/plugin-sdk
           path: plugin-sdk
 
-      # NEW STEP: We must build the SDK's library file first
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      # We use the 'shell: cmd' but call the 'setup-msbuild' environment
       - name: Build Plugin-SDK Library
         run: |
-          cd plugin-sdk
-          .\premake5.bat vs2022
+          cd plugin-sdk/tools/premake
+          premake5 vs2022
+          cd ../..
           msbuild "project_files/plugin_iii.sln" /p:Configuration=Release /p:Platform=Win32
         shell: cmd
 
       - name: Run Sky-UI Premake
         run: ./premake5.bat
         shell: cmd
-
-      - name: Setup MSBuild
-        uses: microsoft/setup-msbuild@v2
 
       - name: Build Sky-UI Solution
         env:
@@ -42,5 +43,4 @@ jobs:
           name: SkyUI-ASI
           path: |
              bin/**/*.asi
-             bin/**/*.dll
              output/asi/*.asi
