@@ -1,4 +1,4 @@
-name: Build Sky-UI (Force Shrink)
+name: Build Sky-UI (Nuclear Opt)
 on: [push, workflow_dispatch]
 
 jobs:
@@ -24,31 +24,37 @@ jobs:
         with:
           version: "5.0.0-beta4"
 
-      - name: Build
+      - name: Build Everything
         env:
           PLUGIN_SDK_DIR: ${{ github.workspace }}\plugin-sdk
         run: |
+          @echo off
           cd plugin-sdk\tools\premake
           premake5 vs2022
           cd ..\..
-          msbuild "Plugin_III\Plugin_III.vcxproj" /p:Configuration=Release /p:Platform=Win32 /p:WholeProgramOptimization=true /v:m
+          
+          :: Force SDK to be tiny
+          msbuild "Plugin_III\Plugin_III.vcxproj" /p:Configuration=Release /p:Platform=Win32 /p:RuntimeLibrary=MultiThreadedDLL /p:WholeProgramOptimization=true /p:Optimization=MinSpace /v:m
+          
           cd ..
           premake5 vs2022
-          msbuild "project_files\sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32 /p:PostBuildEventUseInBuild=false /p:WholeProgramOptimization=true /p:Optimization=MinSpace /p:LinkIncremental=false /v:m
+
+          :: NUCLEAR: Use PowerShell to force 'MinSpace' and 'No Debug' inside the XML project file
+          powershell -Command "(gc project_files\sky-ui.vcxproj) -replace '<Optimization>Disabled</Optimization>', '<Optimization>MinSpace</Optimization>' -replace '<RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>', '<RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>' | Out-File project_files\sky-ui.vcxproj"
+
+          :: Final Build
+          msbuild "project_files\sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32 /p:PostBuildEventUseInBuild=false /p:RuntimeLibrary=MultiThreadedDLL /p:WholeProgramOptimization=true /p:LinkTimeCodeGeneration=UseLinkTimeCodeGeneration /p:Optimization=MinSpace /p:DebugInformationFormat=None /p:LinkIncremental=false /v:m
         shell: cmd
 
-      - name: Search and Compress
+      - name: The Final Shrink
         run: |
           choco install upx
-          :: Search every folder for the .asi and compress it
-          for /r %%f in (*.asi) do (
-            echo Found file at: %%f
-            upx --best --ultra-brute --force "%%f"
-          )
+          :: Search and force compress
+          for /r %%i in (*.asi) do upx --best --ultra-brute --force "%%i"
         shell: cmd
 
-      - name: Upload Result
+      - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: SkyUI-Final
+          name: SkyUI-Nuclear
           path: "**/*.asi"
