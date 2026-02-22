@@ -40,7 +40,8 @@ jobs:
           PLUGIN_SDK_DIR: ${{ github.workspace }}\plugin-sdk
         run: |
           premake5 vs2022
-          msbuild "project_files\sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32 /v:m
+          # Skip the local copy step that causes the crash
+          msbuild "project_files\sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32 /p:PostBuildEventUseInBuild=false /v:m
         shell: cmd
 
       - name: Upload ASI
@@ -49,4 +50,3 @@ jobs:
           name: SkyUI-ASI
           path: |
              output/asi/*.asi
-             bin/**/*.asi
