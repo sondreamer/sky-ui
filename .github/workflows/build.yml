@@ -1,4 +1,4 @@
-name: Build Sky-UI (The Stripper)
+name: Build Sky-UI (The Cheat)
 on: [push, workflow_dispatch]
 
 jobs:
@@ -33,28 +33,27 @@ jobs:
           premake5 vs2022
           cd ..\..
           
-          :: Build SDK with NO debug info and maximum pruning
-          msbuild "Plugin_III\Plugin_III.vcxproj" /p:Configuration=Release /p:Platform=Win32 /p:WholeProgramOptimization=true /p:DebugInformationFormat=None /v:m
+          :: 1. Build SDK
+          msbuild "Plugin_III\Plugin_III.vcxproj" /p:Configuration=Release /p:Platform=Win32 /p:WholeProgramOptimization=true /v:m
           
           cd ..
           premake5 vs2022
 
-          :: THE STRIP:
-          :: /IGNORE:4078   -> Ignore section merge warnings
-          :: /OPT:REF,ICF   -> Aggressive dead code removal
-          :: /SAFESEH:NO    -> Remove exception handling bloat
-          msbuild "project_files\sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32 /p:PostBuildEventUseInBuild=false /p:WholeProgramOptimization=true /p:Optimization=MinSpace /p:LinkIncremental=false /p:GenerateDebugInformation=false /p:AdditionalOptions="/OPT:REF /OPT:ICF /SAFESEH:NO /IGNORE:4078 /MERGE:.rdata=.text /MERGE:.data=.text /ALIGN:16" /v:m
+          :: 2. THE CHEAT:
+          :: /NODEFAULTLIB   -> Do not include the 300KB C++ Standard Library
+          :: /ENTRY:DllMain  -> Manually define the starting point
+          :: /ALIGN:16       -> Minimal padding
+          msbuild "project_files\sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32 /p:PostBuildEventUseInBuild=false /p:WholeProgramOptimization=true /p:Optimization=MinSpace /p:AdditionalOptions="/NODEFAULTLIB /ENTRY:DllMain /OPT:REF /OPT:ICF /ALIGN:16 /MERGE:.rdata=.text /MERGE:.data=.text" /v:m
         shell: cmd
 
-      - name: UPX Ultra
+      - name: UPX Compression
         run: |
           choco install upx
-          :: If this doesn't change it, nothing will
           for /r %%i in (*.asi) do upx --best --ultra-brute --force "%%i"
         shell: cmd
 
-      - name: Upload
+      - name: Upload Result
         uses: actions/upload-artifact@v4
         with:
-          name: SkyUI-Absolute-Minimum
+          name: SkyUI-Cheated
           path: "**/*.asi"
