@@ -1,4 +1,4 @@
-name: Build Sky-UI (Mid Opt)
+name: Build Sky-UI (High Opt)
 on: [push, workflow_dispatch]
 
 jobs:
@@ -31,13 +31,14 @@ jobs:
           cd plugin-sdk\tools\premake
           premake5 vs2022
           cd ..\..
-          msbuild "Plugin_III\Plugin_III.vcxproj" /p:Configuration=Release /p:Platform=Win32 /p:WholeProgramOptimization=true /v:m
+          # Force /MD (Dynamic Runtime) and Maximum Optimization
+          msbuild "Plugin_III\Plugin_III.vcxproj" /p:Configuration=Release /p:Platform=Win32 /p:RuntimeLibrary=MultiThreadedDLL /p:WholeProgramOptimization=true /v:m
           premake5 vs2022
-          msbuild "project_files\sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32 /p:PostBuildEventUseInBuild=false /p:WholeProgramOptimization=true /p:LinkIncremental=false /p:Optimize=true /v:m
+          msbuild "project_files\sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32 /p:PostBuildEventUseInBuild=false /p:RuntimeLibrary=MultiThreadedDLL /p:WholeProgramOptimization=true /p:Optimize=true /p:DebugInformationFormat=None /p:LinkIncremental=false /v:m
         shell: cmd
 
       - name: Upload ASI
         uses: actions/upload-artifact@v4
         with:
-          name: SkyUI-Mid-Opt
+          name: SkyUI-High-Opt
           path: output/asi/*.asi
