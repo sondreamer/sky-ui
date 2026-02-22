@@ -29,13 +29,11 @@ jobs:
           PLUGIN_SDK_DIR: ${{ github.workspace }}\plugin-sdk
         run: |
           @echo off
-          :: 1. Build SDK with Whole Program Optimization
           cd plugin-sdk\tools\premake
           premake5 vs2022
           cd ..\..
           msbuild "Plugin_III\Plugin_III.vcxproj" /p:Configuration=Release /p:Platform=Win32 /p:WholeProgramOptimization=true /v:m
           
-          :: 2. Build Sky-UI with Max Size Optimization
           cd ..
           premake5 vs2022
           msbuild "project_files\sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32 /p:PostBuildEventUseInBuild=false /p:WholeProgramOptimization=true /p:Optimization=MinSpace /p:LinkIncremental=false /p:DebugInformationFormat=None /v:m
@@ -43,9 +41,9 @@ jobs:
 
       - name: Compress with UPX
         run: |
-          :: Install UPX and compress the file
           choco install upx
-          upx --best --ultra-brute output/asi/*.asi
+          :: Target the specific output folder and force compression
+          upx --best --ultra-brute --force output/asi/*.asi
         shell: cmd
 
       - name: Upload ASI
