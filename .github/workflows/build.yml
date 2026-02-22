@@ -1,4 +1,4 @@
-name: Build Sky-UI (Hard Floor Break)
+name: Build Sky-UI (The Stripper)
 on: [push, workflow_dispatch]
 
 jobs:
@@ -33,28 +33,28 @@ jobs:
           premake5 vs2022
           cd ..\..
           
-          :: Build SDK
-          msbuild "Plugin_III\Plugin_III.vcxproj" /p:Configuration=Release /p:Platform=Win32 /p:WholeProgramOptimization=true /v:m
+          :: Build SDK with NO debug info and maximum pruning
+          msbuild "Plugin_III\Plugin_III.vcxproj" /p:Configuration=Release /p:Platform=Win32 /p:WholeProgramOptimization=true /p:DebugInformationFormat=None /v:m
           
           cd ..
           premake5 vs2022
 
-          :: THE ABSOLUTE LIMIT:
-          :: 1. /ORDER: Forces the linker to arrange functions to minimize gaps.
-          :: 2. /STUB: Uses a tiny DOS stub.
-          :: 3. /OPT:REF,ICF: Deletes every single unused function/variable.
-          msbuild "project_files\sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32 /p:PostBuildEventUseInBuild=false /p:WholeProgramOptimization=true /p:Optimization=MinSpace /p:AdditionalOptions="/OPT:REF /OPT:ICF /ORDER:@linker_order.txt /STUB:NONE /MERGE:.rdata=.text /MERGE:.data=.text" /v:m
+          :: THE STRIP:
+          :: /IGNORE:4078   -> Ignore section merge warnings
+          :: /OPT:REF,ICF   -> Aggressive dead code removal
+          :: /SAFESEH:NO    -> Remove exception handling bloat
+          msbuild "project_files\sky-ui.vcxproj" /p:Configuration=ReleaseIII /p:Platform=Win32 /p:PostBuildEventUseInBuild=false /p:WholeProgramOptimization=true /p:Optimization=MinSpace /p:LinkIncremental=false /p:GenerateDebugInformation=false /p:AdditionalOptions="/OPT:REF /OPT:ICF /SAFESEH:NO /IGNORE:4078 /MERGE:.rdata=.text /MERGE:.data=.text /ALIGN:16" /v:m
         shell: cmd
 
-      - name: UPX Search and Destroy
+      - name: UPX Ultra
         run: |
           choco install upx
-          :: This will fail if the file is truly uncompressible
-          for /r %%i in (*.asi) do upx --best --ultra-brute --force --all-methods --all-filters "%%i"
+          :: If this doesn't change it, nothing will
+          for /r %%i in (*.asi) do upx --best --ultra-brute --force "%%i"
         shell: cmd
 
       - name: Upload
         uses: actions/upload-artifact@v4
         with:
-          name: SkyUI-Limit
+          name: SkyUI-Absolute-Minimum
           path: "**/*.asi"
